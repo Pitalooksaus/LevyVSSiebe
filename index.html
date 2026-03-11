@@ -1,1 +1,571 @@
 
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUZZ BATTLE – Levy vs Siebe</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;700;900&display=swap');
+
+  :root {
+    --sky: #6CABDD;
+    --dark-blue: #1C2C5B;
+    --red: #FF6B6B;
+    --gold: #FFD700;
+    --bg: #0a0a0f;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Bebas Neue', 'Arial Black', Impact, sans-serif;
+    color: white;
+    overflow: hidden;
+    height: 100vh; width: 100vw;
+    display: flex; flex-direction: column; align-items: center;
+    user-select: none;
+  }
+
+  body::before {
+    content:''; position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(108,171,221,0.09) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 50%, rgba(255,80,80,0.07) 0%, transparent 55%);
+    pointer-events:none; z-index:0;
+  }
+
+  h1.title {
+    font-size: clamp(2rem, 5.5vw, 4.5rem);
+    letter-spacing: 0.15em; text-align: center; margin-top: 14px;
+    background: linear-gradient(90deg, var(--sky), #fff, var(--red));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; z-index:1; position:relative; line-height:1;
+  }
+
+  .subtitle {
+    font-size: 0.85rem; letter-spacing: 0.35em; color: rgba(255,255,255,0.3);
+    margin-bottom: 4px; z-index:1; position:relative;
+    font-family: 'Barlow Condensed', Arial, sans-serif; text-transform: uppercase;
+  }
+
+  .battle-bar-container {
+    width: 88%; max-width: 680px; z-index:1; position:relative; margin: 6px 0;
+  }
+  .names-row {
+    display:flex; justify-content:space-between; font-size:1.5rem;
+    letter-spacing:0.1em; margin-bottom:2px;
+  }
+  .names-row .levy-name { color: var(--sky); }
+  .names-row .siebe-name { color: var(--red); }
+
+  .score-row {
+    display:flex; justify-content:space-between;
+    font-size: 2.4rem; font-weight:900; margin-bottom:4px;
+  }
+  .score-levy { color: var(--sky); }
+  .score-siebe { color: var(--red); }
+
+  .bar-track {
+    width:100%; height:28px;
+    background:rgba(0,0,0,0.3);
+    border-radius:14px; overflow:hidden;
+    border:1.5px solid rgba(255,255,255,0.08);
+    position:relative; display:flex; align-items:stretch;
+  }
+  .bar-levy {
+    height:100%;
+    background: linear-gradient(90deg, #1C2C5B, #6CABDD);
+    border-radius:14px 0 0 14px;
+    transition: width 0.12s ease;
+    min-width: 0;
+  }
+  .bar-siebe {
+    height:100%;
+    background: linear-gradient(90deg, #FF3333, #991111);
+    border-radius:0 14px 14px 0;
+    transition: width 0.12s ease;
+    min-width: 0;
+    margin-left:auto;
+  }
+  .bar-fill { display:none; }
+
+  .arena {
+    width:90%; max-width:720px; height:285px;
+    position:relative; z-index:1;
+    display:flex; align-items:flex-end; justify-content:space-between;
+    padding:0 10px;
+  }
+
+  .character-wrap {
+    display:flex; flex-direction:column; align-items:center; gap:3px; z-index:2;
+  }
+  .char-label { font-size:1rem; letter-spacing:0.15em; }
+
+  .rope-container {
+    position:absolute; bottom:75px; left:50%; transform:translateX(-50%);
+    width:52%; height:20px; display:flex; align-items:center; z-index:1;
+  }
+  .rope {
+    width:100%; height:7px;
+    background: repeating-linear-gradient(90deg,#8B6914 0px,#C99A0C 5px,#8B6914 10px);
+    border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.6); position:relative;
+  }
+  .rope-knot {
+    position:absolute; top:50%; transform:translate(-50%,-50%);
+    width:17px; height:17px;
+    background:radial-gradient(circle,#FFD700,#B8860B);
+    border-radius:50%; border:2px solid rgba(255,255,255,0.4);
+    box-shadow:0 0 10px rgba(255,215,0,0.7);
+    transition: left 0.1s ease; z-index:3;
+  }
+
+  .floor {
+    position:absolute; bottom:0; left:0; right:0; height:55px;
+    background:linear-gradient(180deg,#181828 0%,#0f0f18 100%);
+    border-top:2px solid rgba(108,171,221,0.12);
+  }
+
+  .levy-svg  { filter: drop-shadow(0 0 16px rgba(108,171,221,0.55)); }
+  .siebe-svg { filter: drop-shadow(0 0 16px rgba(255,80,80,0.5)); }
+  .levy-svg.pulling  { animation: pullL 0.18s ease; }
+  .siebe-svg.pulling { animation: pullR 0.2s ease; }
+
+  @keyframes pullL {
+    0%  { transform: scaleX(1) rotate(0deg); }
+    40% { transform: scaleX(1.07) rotate(-5deg) translateX(-4px); }
+    100%{ transform: scaleX(1) rotate(0deg); }
+  }
+  @keyframes pullR {
+    0%  { transform: scaleX(-1) rotate(0deg); }
+    40% { transform: scaleX(-1.06) rotate(4deg) translateX(4px); }
+    100%{ transform: scaleX(-1) rotate(0deg); }
+  }
+
+  .hud {
+    z-index:1; position:relative;
+    display:flex; flex-direction:column; align-items:center; gap:5px; margin-top:2px;
+  }
+  .stamina-row {
+    display:flex; align-items:center; gap:8px;
+    font-size:0.8rem; letter-spacing:0.15em; color:rgba(255,255,255,0.4);
+    font-family:'Barlow Condensed',Arial,sans-serif;
+  }
+  .stamina-bar {
+    width:110px; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;
+  }
+  .stamina-fill {
+    height:100%; border-radius:3px;
+    background:linear-gradient(90deg,#00ff88,#00cc66); transition:width 0.1s;
+  }
+  .countdown { font-size:1rem; letter-spacing:0.2em; color:rgba(255,255,255,0.3); }
+
+  .combo-display { font-size:1.7rem; color:var(--gold); letter-spacing:0.1em; height:1.9rem; }
+  .combo-display.pop { animation: cpop 0.2s ease; }
+  @keyframes cpop {
+    0%  { transform:scale(1); }
+    50% { transform:scale(1.45); }
+    100%{ transform:scale(1); }
+  }
+
+  .key-btn {
+    width:76px; height:76px; border-radius:12px;
+    background:linear-gradient(145deg,#1e3a5f,#0d1f38);
+    border:3px solid var(--sky); font-size:2.6rem; color:white; cursor:pointer;
+    box-shadow:0 6px 0 #07111e, 0 0 18px rgba(108,171,221,0.22);
+    transition:all 0.07s ease; display:flex; align-items:center; justify-content:center;
+  }
+  .key-btn:active, .key-btn.pressed {
+    transform:translateY(5px);
+    box-shadow:0 1px 0 #07111e, 0 0 28px rgba(108,171,221,0.55);
+    background:linear-gradient(145deg,#2a5a9f,#1d3a6f); border-color:white;
+  }
+  .key-hint {
+    font-size:0.78rem; letter-spacing:0.25em; color:rgba(255,255,255,0.3);
+    font-family:'Barlow Condensed',Arial,sans-serif; text-transform:uppercase;
+  }
+
+  .particle {
+    position:fixed; font-size:1.3rem; pointer-events:none; z-index:99;
+    animation:floatUp 0.9s ease forwards;
+  }
+  @keyframes floatUp {
+    0%  { opacity:1; transform:translateY(0) scale(1); }
+    60% { opacity:1; transform:translateY(-55px) scale(1.2); }
+    100%{ opacity:0; transform:translateY(-95px) scale(0.8); }
+  }
+
+  .win-screen {
+    display:none; position:fixed; inset:0; z-index:100;
+    background:rgba(0,0,0,0.87);
+    flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  }
+  .win-screen.show { display:flex; }
+  .win-text {
+    font-size:clamp(3rem,10vw,6.5rem); letter-spacing:0.1em; text-align:center;
+    animation:winPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  }
+  @keyframes winPop {
+    from { transform:scale(0.3) rotate(-8deg); opacity:0; }
+    to   { transform:scale(1) rotate(0deg); opacity:1; }
+  }
+  .win-levy  { color:var(--sky); text-shadow:0 0 40px var(--sky); }
+  .win-siebe { color:var(--red); text-shadow:0 0 40px var(--red); }
+  .win-sub {
+    font-size:1.3rem; letter-spacing:0.3em; color:rgba(255,255,255,0.5);
+    font-family:'Barlow Condensed',Arial,sans-serif; text-transform:uppercase;
+  }
+  .restart-btn {
+    padding:12px 38px; background:transparent; border:2px solid white; color:white;
+    font-size:1.5rem; letter-spacing:0.2em; cursor:pointer;
+    border-radius:8px; transition:all 0.2s; margin-top:8px;
+  }
+  .restart-btn:hover { background:white; color:black; }
+</style>
+</head>
+<body>
+
+<h1 class="title">⚡ HUZZ BATTLE ⚡</h1>
+<div class="subtitle">Levy vs Siebe • Eerste tot 100 wint</div>
+
+<div class="battle-bar-container">
+  <div class="names-row">
+    <span class="levy-name">LEVY</span>
+    <span class="siebe-name">SIEBE</span>
+  </div>
+  <div class="score-row">
+    <span class="score-levy"  id="scoreLevyDisplay">0</span>
+    <span class="score-siebe" id="scoreSiebeDisplay">0</span>
+  </div>
+  <div class="bar-track">
+    <div class="bar-levy"  id="barLevy"  style="width:0%"></div>
+    <div class="bar-siebe" id="barSiebe" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="arena">
+  <div class="floor"></div>
+
+  <div class="rope-container">
+    <div class="rope">
+      <div class="rope-knot" id="ropeKnot" style="left:40%"></div>
+    </div>
+  </div>
+
+  <!-- LEVY – slim, tall, MC tracksuit + cap -->
+  <div class="character-wrap">
+    <div class="char-label" style="color:var(--sky)">LEVY</div>
+    <svg class="levy-svg" id="levySvg" width="105" height="245" viewBox="0 0 105 245" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="52" cy="240" rx="30" ry="5" fill="rgba(0,0,0,0.3)"/>
+      <!-- shoes -->
+      <rect x="24" y="220" width="24" height="12" rx="5" fill="#ccc"/>
+      <rect x="54" y="220" width="24" height="12" rx="5" fill="#ccc"/>
+      <rect x="24" y="220" width="24" height="5" rx="3" fill="#111"/>
+      <rect x="54" y="220" width="24" height="5" rx="3" fill="#111"/>
+      <!-- legs – slim MC blue -->
+      <rect x="26" y="158" width="20" height="65" rx="6" fill="#1C2C5B"/>
+      <rect x="56" y="158" width="20" height="65" rx="6" fill="#1C2C5B"/>
+      <rect x="33" y="160" width="3" height="60" fill="white" opacity="0.6"/>
+      <rect x="63" y="160" width="3" height="60" fill="white" opacity="0.6"/>
+      <!-- torso – MC sky blue jacket -->
+      <rect x="20" y="100" width="65" height="62" rx="11" fill="#6CABDD"/>
+      <rect x="20" y="105" width="12" height="57" rx="4" fill="#1C2C5B"/>
+      <rect x="73" y="105" width="12" height="57" rx="4" fill="#1C2C5B"/>
+      <!-- collar -->
+      <path d="M38 100 L52 116 L66 100" fill="#1C2C5B"/>
+      <line x1="52" y1="116" x2="52" y2="162" stroke="#1C2C5B" stroke-width="2.5"/>
+      <!-- MC badge -->
+      <circle cx="40" cy="120" r="9" fill="#1C2C5B"/>
+      <circle cx="40" cy="120" r="6" fill="none" stroke="#6CABDD" stroke-width="1.5"/>
+      <text x="40" y="124" text-anchor="middle" font-size="5.5" fill="#98C5E9" font-weight="bold" font-family="Arial">MC</text>
+      <!-- left arm pulling -->
+      <rect x="3" y="108" width="28" height="13" rx="6" fill="#6CABDD" transform="rotate(-18 17 115)"/>
+      <ellipse cx="8" cy="133" rx="9" ry="7" fill="#FDBCB4"/>
+      <!-- right arm back -->
+      <rect x="83" y="116" width="24" height="12" rx="6" fill="#1C2C5B"/>
+      <ellipse cx="95" cy="122" rx="7" ry="6" fill="#FDBCB4"/>
+      <!-- neck -->
+      <rect x="45" y="82" width="15" height="22" rx="5" fill="#FDBCB4"/>
+      <!-- head – slim/tall -->
+      <ellipse cx="52" cy="66" rx="21" ry="27" fill="#FDBCB4"/>
+      <!-- hair under cap -->
+      <ellipse cx="52" cy="41" rx="19" ry="7" fill="#2a1a0a"/>
+      <!-- cap crown -->
+      <rect x="31" y="37" width="42" height="19" rx="7" fill="#6CABDD"/>
+      <!-- cap badge -->
+      <circle cx="52" cy="44" r="6" fill="#1C2C5B"/>
+      <text x="52" y="47.5" text-anchor="middle" font-size="5" fill="#6CABDD" font-weight="bold" font-family="Arial">MC</text>
+      <!-- cap brim -->
+      <rect x="20" y="50" width="27" height="7" rx="3" fill="#1C2C5B"/>
+      <line x1="20" y1="57" x2="47" y2="57" stroke="#555" stroke-width="1"/>
+      <!-- eyes -->
+      <ellipse cx="42" cy="67" rx="4.5" ry="5" fill="white"/>
+      <ellipse cx="62" cy="67" rx="4.5" ry="5" fill="white"/>
+      <ellipse cx="43" cy="68" rx="2.8" ry="3" fill="#1a0e05"/>
+      <ellipse cx="63" cy="68" rx="2.8" ry="3" fill="#1a0e05"/>
+      <circle cx="44" cy="67" r="1" fill="white"/>
+      <circle cx="64" cy="67" r="1" fill="white"/>
+      <!-- eyebrows -->
+      <line x1="37" y1="60" x2="48" y2="62" stroke="#2a1a0a" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="56" y1="62" x2="67" y2="60" stroke="#2a1a0a" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- nose -->
+      <ellipse cx="52" cy="74" rx="2" ry="1.5" fill="#e0a090" opacity="0.5"/>
+      <!-- mouth smirk -->
+      <path d="M44 81 Q52 87 60 81" stroke="#b06050" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- SIEBE – stocky, short hair, tough streetwear -->
+  <div class="character-wrap">
+    <div class="char-label" style="color:var(--red)">SIEBE</div>
+    <svg class="siebe-svg" id="siebeSvg" width="115" height="245" viewBox="0 0 115 245" xmlns="http://www.w3.org/2000/svg" style="transform:scaleX(-1)">
+      <ellipse cx="57" cy="240" rx="34" ry="5" fill="rgba(0,0,0,0.3)"/>
+      <!-- shoes chunky -->
+      <rect x="18" y="215" width="32" height="16" rx="5" fill="#111"/>
+      <rect x="58" y="215" width="32" height="16" rx="5" fill="#111"/>
+      <rect x="18" y="215" width="32" height="8" rx="3" fill="#1e1e1e"/>
+      <rect x="58" y="215" width="32" height="8" rx="3" fill="#1e1e1e"/>
+      <!-- legs cargo black -->
+      <rect x="20" y="150" width="28" height="68" rx="7" fill="#1a1a1a"/>
+      <rect x="60" y="150" width="28" height="68" rx="7" fill="#1a1a1a"/>
+      <rect x="22" y="172" width="18" height="20" rx="3" fill="#252525" stroke="#333" stroke-width="1"/>
+      <rect x="62" y="172" width="18" height="20" rx="3" fill="#252525" stroke="#333" stroke-width="1"/>
+      <!-- belt -->
+      <rect x="18" y="148" width="72" height="9" rx="3" fill="#2a2a2a"/>
+      <rect x="50" y="148" width="14" height="9" rx="2" fill="#666"/>
+      <rect x="54" y="150" width="6" height="5" rx="1" fill="#999"/>
+      <!-- torso olive bomber -->
+      <rect x="14" y="94" width="80" height="60" rx="12" fill="#2d3520"/>
+      <rect x="14" y="99" width="16" height="55" rx="5" fill="#1e2416"/>
+      <rect x="78" y="99" width="16" height="55" rx="5" fill="#1e2416"/>
+      <rect x="36" y="104" width="32" height="22" rx="4" fill="#1a2010"/>
+      <text x="52" y="120" text-anchor="middle" font-size="8" fill="#88cc66" font-weight="900" font-family="Arial" letter-spacing="0.5">TUFF</text>
+      <line x1="52" y1="94" x2="52" y2="154" stroke="#444" stroke-width="2.5"/>
+      <!-- left arm big pulling -->
+      <rect x="-2" y="100" width="32" height="17" rx="8" fill="#2d3520" transform="rotate(-14 14 108)"/>
+      <ellipse cx="10" cy="128" rx="11" ry="9" fill="#FDBCB4"/>
+      <line x1="4"  y1="125" x2="4"  y2="131" stroke="#d09080" stroke-width="1.2"/>
+      <line x1="10" y1="123" x2="10" y2="129" stroke="#d09080" stroke-width="1.2"/>
+      <line x1="16" y1="125" x2="16" y2="131" stroke="#d09080" stroke-width="1.2"/>
+      <!-- right arm back -->
+      <rect x="84" y="112" width="30" height="15" rx="7" fill="#1e2416"/>
+      <ellipse cx="100" cy="119" rx="9" ry="7" fill="#FDBCB4"/>
+      <!-- neck thick -->
+      <rect x="42" y="77" width="24" height="22" rx="6" fill="#FDBCB4"/>
+      <!-- head rounder -->
+      <ellipse cx="54" cy="61" rx="28" ry="26" fill="#FDBCB4"/>
+      <rect x="28" y="67" width="52" height="16" rx="6" fill="#FDBCB4"/>
+      <!-- short hair close cut -->
+      <ellipse cx="54" cy="37" rx="27" ry="10" fill="#100a04"/>
+      <rect x="27" y="36" width="54" height="14" rx="5" fill="#100a04"/>
+      <rect x="27" y="47" width="6"  height="14" rx="3" fill="#FDBCB4" opacity="0.3"/>
+      <rect x="75" y="47" width="6"  height="14" rx="3" fill="#FDBCB4" opacity="0.3"/>
+      <!-- eyes intense -->
+      <ellipse cx="41" cy="62" rx="5.5" ry="5" fill="white"/>
+      <ellipse cx="67" cy="62" rx="5.5" ry="5" fill="white"/>
+      <ellipse cx="42" cy="63" rx="3.5" ry="3.5" fill="#0d0804"/>
+      <ellipse cx="68" cy="63" rx="3.5" ry="3.5" fill="#0d0804"/>
+      <circle cx="43" cy="62" r="1.2" fill="white"/>
+      <circle cx="69" cy="62" r="1.2" fill="white"/>
+      <!-- thick brows scowl -->
+      <rect x="33" y="52" width="16" height="5" rx="2.5" fill="#100a04" transform="rotate(10 41 54)"/>
+      <rect x="59" y="52" width="16" height="5" rx="2.5" fill="#100a04" transform="rotate(-10 67 54)"/>
+      <!-- nose -->
+      <ellipse cx="54" cy="71" rx="3" ry="2" fill="#d09080" opacity="0.5"/>
+      <!-- mouth tight -->
+      <path d="M43 79 Q54 76 65 79" stroke="#a06050" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- stubble -->
+      <circle cx="43" cy="82" r="1" fill="#c09070" opacity="0.45"/>
+      <circle cx="48" cy="84" r="1" fill="#c09070" opacity="0.45"/>
+      <circle cx="54" cy="85" r="1" fill="#c09070" opacity="0.45"/>
+      <circle cx="60" cy="84" r="1" fill="#c09070" opacity="0.45"/>
+      <circle cx="65" cy="82" r="1" fill="#c09070" opacity="0.45"/>
+      <!-- earring -->
+      <circle cx="82" cy="65" r="4" fill="none" stroke="#FFD700" stroke-width="2"/>
+    </svg>
+  </div>
+</div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="stamina-row">
+    <span>STAMINA</span>
+    <div class="stamina-bar"><div class="stamina-fill" id="staminaFill" style="width:100%"></div></div>
+    <span id="staminaVal">100</span>
+    <span style="margin-left:10px" class="countdown">🏁 EERST 100!</span>
+  </div>
+  <div class="combo-display" id="comboDisplay"></div>
+  <button class="key-btn" id="keyBtn" onclick="pressX()">X</button>
+  <div class="key-hint">Druk X of klik de knop</div>
+</div>
+
+<div class="win-screen" id="winScreen">
+  <div class="win-text" id="winText"></div>
+  <div class="win-sub"  id="winSub"></div>
+  <button class="restart-btn" onclick="restartGame()">↻ OPNIEUW</button>
+</div>
+
+<script>
+  /*
+    LOGICA:
+    - tugPos gaat van 0 tot 100
+    - tugPos hoog = Siebe wint (knoop naar Siebe = rechts)
+    - tugPos laag = Levy wint (knoop naar Levy = links)
+    - Start op 60 (Siebe al voor)
+    - Levy drukt X → tugPos daalt (knoop naar links)
+    - Siebe AI → tugPos stijgt (knoop naar rechts)
+    - Balk vult van links = Siebe's dominantie
+    - Win: tugPos <= 0 → Levy wint, tugPos >= 100 → Siebe wint
+  */
+  let levyScore  = 0;
+  let siebeScore = 0;
+  let tugPos     = 60;  // start al in Siebe's voordeel
+  let stamina    = 100;
+  let combo      = 0;
+  let gameActive = true;
+  let timeLeft   = 30;
+  let siebeCool  = 12;
+  let comboTO, timerIV;
+
+  const huzzWords  = ['HUZZ!','GEPULLED!','YOO!','AYY!','W!','NO CAP!','BUSSIN!','RIZZ!','SIGMA!'];
+  const siebeWords = ['TUFF!','NAH!','EZ!','MY PULL!','L RATIO','GG'];
+
+  function $(id){ return document.getElementById(id); }
+
+  function spawnWord(x, y, text, color){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = text;
+    p.style.cssText = `left:${x}px;top:${y}px;color:${color};font-family:'Bebas Neue','Arial Black',Impact,sans-serif`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), 950);
+  }
+
+  function pressX(){
+    if(!gameActive || stamina <= 0) return;
+
+    const btn = $('keyBtn');
+    btn.classList.add('pressed');
+    setTimeout(()=>btn.classList.remove('pressed'), 90);
+
+    combo++;
+    clearTimeout(comboTO);
+    comboTO = setTimeout(()=>{ combo=0; renderCombo(); }, 700);
+
+    const power = 1 + (combo > 10 ? 1 : 0);
+
+    stamina = Math.max(0, stamina - (7 + Math.random()*4));
+    tugPos  = Math.max(0, tugPos - power * 0.55); // Levy trekt knoop naar links = tugPos daalt
+    levyScore += power;
+
+    const svg = $('levySvg');
+    svg.classList.remove('pulling'); void svg.offsetWidth; svg.classList.add('pulling');
+
+    spawnWord(70+Math.random()*70, 285+Math.random()*35,
+              huzzWords[Math.floor(Math.random()*huzzWords.length)],
+              combo>8 ? '#FFD700' : '#6CABDD');
+
+    render(); checkWin();
+  }
+
+  function siebeThink(){
+    if(!gameActive) return;
+    siebeCool--;
+    if(siebeCool <= 0){
+      const rage = tugPos < 65 ? 5 : 3.5; // harder als Levy dichterbij komt
+      const pull = rage + Math.random()*2.5;
+      tugPos = Math.min(100, tugPos + pull * 1.3); // Siebe trekt naar rechts = tugPos stijgt
+      siebeScore += Math.round(pull);
+
+      const svg = $('siebeSvg');
+      svg.classList.remove('pulling'); void svg.offsetWidth; svg.classList.add('pulling');
+
+      spawnWord(window.innerWidth-210+Math.random()*60, 285+Math.random()*35,
+                siebeWords[Math.floor(Math.random()*siebeWords.length)], '#FF6B6B');
+
+      siebeCool = 8 + Math.floor(Math.random()*7);
+      render(); checkWin();
+    }
+  }
+
+  function render(){
+    // balk: levy groeit van links, siebe van rechts, max 100 elk
+    $('barLevy').style.width  = Math.min(levyScore, 100) + '%';
+    $('barSiebe').style.width = Math.min(siebeScore, 100) + '%';
+    $('ropeKnot').style.left  = tugPos+'%';
+    $('scoreLevyDisplay').textContent  = levyScore;
+    $('scoreSiebeDisplay').textContent = siebeScore;
+
+    const st = Math.round(stamina);
+    $('staminaFill').style.width = st+'%';
+    $('staminaVal').textContent  = st;
+    $('staminaFill').style.background =
+      st>55 ? 'linear-gradient(90deg,#00ff88,#00cc66)' :
+      st>25 ? 'linear-gradient(90deg,#ffcc00,#ff9900)' :
+              'linear-gradient(90deg,#ff4444,#cc2200)';
+    renderCombo();
+  }
+
+  function renderCombo(){
+    const el = $('comboDisplay');
+    if(combo >= 3){
+      el.textContent = `🔥 x${combo} COMBO`;
+      el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+    } else { el.textContent = ''; }
+  }
+
+  function checkWin(){
+    if(levyScore >= 100) endGame('levy');
+    else if(siebeScore >= 100) endGame('siebe');
+  }
+
+  function endGame(winner){
+    gameActive = false; clearInterval(timerIV);
+    let wt, ws, cls;
+    if(winner==='levy'){
+      wt='🏆 LEVY WINT!'; cls='win-levy';
+      ws=`KING VAN DE HUZZ! (${levyScore} VS ${siebeScore})`;
+    } else if(winner==='siebe'){
+      wt='💪 SIEBE WINT!'; cls='win-siebe';
+      ws=`SIEBE IS TE TUFF! (${siebeScore} VS ${levyScore})`;
+    } else {
+      // tijd op: wie heeft de knoop aan zijn kant?
+      if(tugPos <= 50){
+        wt='🏆 LEVY WINT!'; cls='win-levy';
+        ws=`OP POSITIE! ${levyScore} VS ${siebeScore}`;
+      } else {
+        wt='💪 SIEBE WINT!'; cls='win-siebe';
+        ws=`OP POSITIE! ${siebeScore} VS ${levyScore}`;
+      }
+    }
+    $('winText').textContent = wt;
+    $('winText').className = `win-text ${cls}`;
+    $('winSub').textContent = ws;
+    $('winScreen').classList.add('show');
+  }
+
+  function restartGame(){
+    levyScore=0; siebeScore=0; tugPos=60; stamina=100;
+    combo=0; gameActive=true; timeLeft=30; siebeCool=12;
+    $('winScreen').classList.remove('show');
+    render(); startTimer();
+  }
+
+  function startTimer(){ } // geen timer meer
+
+  document.addEventListener('keydown', e=>{
+    if((e.key==='x'||e.key==='X') && !e.repeat) pressX();
+  });
+
+  setInterval(()=>{
+    if(!gameActive) return;
+    siebeThink();
+    stamina = Math.min(100, stamina + 0.22);
+  }, 50);
+
+  render();
+  startTimer();
+</script>
+</body>
+</html>
+
